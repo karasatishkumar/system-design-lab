@@ -144,6 +144,68 @@ First we can generate a hash of the original URL which will be 32 character in l
 If we somehow solve this problem, what about the uniqueness problem? Will the initial 6 characters be unique? What happens if different user provide same url? Looking at all these use case, we still feel if we can maintain the uniqueness of our hash using this technique. 
 
 #### Key Generation Service (KGS)
+When generating an unique key is not so straight forward, it would be better to build a separate standalone application whose sole responsibility would be to generate and provide unique 6 character key. This service can generate keys before hand and serve the request with one marking used. With this not only we have to worry about same url from different users also it would be unique for sure.
+
+##### Can concurrency create a problem here? 
+If there are multiple requests, there is a fair possibility of same key being served twice.
+
+To solve this problem we can have a status column on the same table to mark a key as used. In our code we should always try to mark the status as used before serving the key. The marking can continue till the time you get a lock. On successful marking the key can be served to the requester. 
+
+As we see it would take some time for a process to pick the key in a loaded scenario, it would be handy if we can populate the few keys in memory as part of a job to decrease the latency of serving. But if the server goes down abruptly, we might waste few keys. But that's okay if we go back and look at the combinations versus need. Else we can always run a job to check the URL table for any inconsistecy and clean them.
+
+![Key Table](images/key.png)
+
+##### Storage need for KGS?
+If we opt for 6 character key assuming 1 byte for on character. We need 412.3 GB storage.
+    
+    64^6 * 1 KB * 6 (character per key) = ~412.3 GB
+
+##### Is the KGS DB is a single point of failure?
+Yes, we can have a secondary DB in case of a primary fail to rule out the problem for all DBs.
+
+## DB Partitioning And Replication
+To scale our DB we need partitioning, so that billions of records can be distributed among different servers.
+
+### Range Based Partitioning
+We can pick the Created Datetime field to define a range partitioning. But there would be cases where creation of the new URLs might not be well distributed with date resulting in bad distribution of the data.
+
+### Hash Based Partitioning
+We can apply hash based partitioning on the Alias field, so that mod on hash would distribute the data evenly. 
+
+This approach still overload a partition which can be solved using Consistent Hashing. 
+
+## Caching
+We can cache URLs for quick access. We can pick any of the self caching solutions like Memcache or Redis for this. Application can check the cache always for the presence else can hit database.
+
+### How much memory we need?
+As discussed earlier we can go for 20% of the daily traffic and can change this based on the usage in future. As estimated we need ~331 GB of memory initially.
+
+### What cache eviction policy best fits to our requirements?
+Least Recently Used (LRU) can be a reasonable policy for our system. We can always remove the least used url from our cache to acomodate a new URL.
+
+To further increase the efficiency we can replicate the cache server for a faster access.
+
+## Load Balancer
+We can add load balancer in three places
+1. Client and Application Server
+2. Application Server and Database Server
+3. Application Server and Cache Server
+
+Initially we can use a simple LB based on Round Robin policy  which will distribute the traffic based on simple rotation. This LB is simple to implement without much overhead. This LB will table out a dead server automatically from the list and stop sending the requests. 
+
+Round Robin does not consider the load on the server and in a loaded environment we could encounter latency problems. To solve this problem intelligent hardware LBs can be used.
+
+## Purging and Cleanup
+It is better to clean the expired URLs from the system in a very lazy way when there would not be much load on the system. While purging the URLs we can also clean up those used keys for future consumption. 
+
+## Architecture Diagram
+![Architecture Diagram](images/arch.png)
+
+## Analytics
+It's sometime useful to trace few details about the access of a URL. For example geographical location of the access, origin web page, date, time etc. But if we start keeping this in DB it would slow down the system. So I guess this all can be captured in log and can then be redirected to a Big Data ecosystem for analytics.
+
+## Security and Permissions
+We can have access control on the URLs, but I don't see any viable need for that in this case. Tiny URLs are mostly used for advertisement campaign and posts in social media where it's always required to be public. But we can extend the solution if there is a need for it.
 
 
 
