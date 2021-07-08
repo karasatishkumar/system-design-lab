@@ -1,6 +1,23 @@
 # System Design Laboratory
 This is a comprehensive documentation of various aspects of software system designing. We will be covering the basic bare minimum aspects of software designing based on a different category. Later we will pick few of the already available systems from a different category to come up with the detailed system design on which the product/ service can be build. This would be a good start for job seekers for practicing and understanding system designing concepts.
 
+- [System Requirements](#system-requirements)
+- [Capacity Planning](#capacity-planning)
+    * [Traffic Estimates](#traffic-estimates)
+    * [Storage Estimates](#storage-estimates)
+    * [Bandwidth Estimates](#bandwidth-estimates)
+    * [Memory Estimates](#memory-estimates)
+- [System Functionalities Or APIs](#system-functionalities-or-apis)
+- [Abstract Design](#abstract-design)
+- [Database Design](#database-design)
+    * [Database Schema](#database-schema)
+- [Detailed Design](#detailed-design)
+- [Availability & Reliability](#availability---reliability)
+- [Purging And Clean up](#purging-and-clean-up)
+- [Security And Permissions](#security-and-permissions)
+- [Analytics](#analytics)
+- [System Design Bucket](#system-design-bucket)
+
 When ever you start designing a system, it's very much required to understand few details about the systems. To understand the system you should ask following few questions.
 
 1. What is it for? 
