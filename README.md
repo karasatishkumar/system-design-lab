@@ -52,7 +52,7 @@ In any system we should always think of data purging and clean up. This is very 
 
 ## System Design Bucket
 
-* !(Tiny URL|)
+* [Tiny URL](tiny-url)
 
 
 
